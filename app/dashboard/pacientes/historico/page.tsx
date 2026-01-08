@@ -3,20 +3,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { 
-  Search, 
-  History, 
-  ArrowLeft, 
-  Calendar, 
-  User, 
-  Stethoscope, 
-  Pill, 
-  FileText,
-  Loader2,
-  ChevronRight,
-  Edit3,
-  Check,
-  X,
-  Save
+  Search, History, ArrowLeft, Calendar, User, Stethoscope, 
+  Pill, Loader2, ChevronRight, Edit3, Check, X, Save, AlertCircle 
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,8 +16,7 @@ export default function HistoricoClinicoPage() {
   const [loading, setLoading] = useState(false);
   const [buscandoHistorico, setBuscandoHistorico] = useState(false);
 
-  // Estados para Edição
-  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [idSendoEditado, setIdSendoEditado] = useState<string | null>(null);
   const [tempDados, setTempDados] = useState<any>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
@@ -53,17 +40,20 @@ export default function HistoricoClinicoPage() {
     setBuscandoHistorico(true);
     setPacientesEncontrados([]);
 
+    // BUSCA PELO NOME (Certifique-se que na tabela 'prontuarios' o nome está igual)
     const { data, error } = await supabase
       .from('prontuarios')
       .select('*')
       .eq('paciente_nome', paciente.nome)
       .order('data_atendimento', { ascending: false });
 
-    if (!error) setHistorico(data || []);
+    if (error) console.error("Erro ao carregar:", error);
+    setHistorico(data || []);
     setBuscandoHistorico(false);
   };
 
   const salvarAlteracoes = async (id: string) => {
+    if (!id) return;
     setSalvandoEdicao(true);
     const { error } = await supabase
       .from('prontuarios')
@@ -75,57 +65,48 @@ export default function HistoricoClinicoPage() {
       .eq('id', id);
 
     if (!error) {
-      setEditandoId(null);
-      // Recarrega o histórico para mostrar os dados atualizados
+      setIdSendoEditado(null);
       carregarHistorico(pacienteSelecionado);
     } else {
-      alert("Erro ao atualizar: " + error.message);
+      alert("Erro: " + error.message);
     }
     setSalvandoEdicao(false);
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto bg-gray-50 min-h-screen font-sans text-gray-900">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto bg-gray-50 min-h-screen font-sans">
       
       <header className="mb-8">
-        <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 font-bold mb-4 hover:underline">
-          <ArrowLeft size={18} /> Painel Principal
+        <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 font-bold mb-4">
+          <ArrowLeft size={18} /> Painel
         </Link>
-        <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tighter uppercase italic">
+        <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3 uppercase italic tracking-tighter">
           <History className="text-blue-600" size={32} /> Histórico Clínico
         </h1>
       </header>
 
       {/* BARRA DE PESQUISA */}
       <div className="mb-8 flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Nome do paciente..."
-            className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-bold"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && pesquisarPaciente()}
-          />
-        </div>
-        <button onClick={pesquisarPaciente} className="bg-blue-600 text-white px-8 rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
-          {loading ? <Loader2 className="animate-spin" /> : "BUSCAR"}
+        <input 
+          type="text" 
+          placeholder="Digite o nome do paciente..."
+          className="flex-1 p-4 bg-white border-2 border-blue-100 rounded-2xl shadow-sm outline-none focus:border-blue-500 font-bold text-lg"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <button onClick={pesquisarPaciente} className="bg-blue-600 text-white px-8 rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200">
+          {loading ? <Loader2 className="animate-spin" /> : "PESQUISAR"}
         </button>
       </div>
 
-      {/* LISTA DE PACIENTES ENCONTRADOS */}
+      {/* LISTA DE PACIENTES */}
       {pacientesEncontrados.length > 0 && (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden mb-8 animate-in fade-in slide-in-from-top-4">
-          <p className="p-4 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b">Resultados da busca:</p>
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden mb-8 animate-in slide-in-from-top-2">
           {pacientesEncontrados.map(p => (
-            <button key={p.id} onClick={() => carregarHistorico(p)} className="w-full p-5 text-left flex items-center justify-between hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-black">{p.nome.charAt(0)}</div>
-                <div>
-                  <h3 className="font-black text-gray-900 uppercase text-sm">{p.nome}</h3>
-                  <p className="text-xs text-gray-400 font-medium italic">CPF: {p.cpf}</p>
-                </div>
+            <button key={p.id} onClick={() => carregarHistorico(p)} className="w-full p-5 text-left flex items-center justify-between hover:bg-blue-50 border-b last:border-0 group">
+              <div>
+                <span className="font-black uppercase text-gray-900 group-hover:text-blue-600 transition-colors">{p.nome}</span>
+                <p className="text-[10px] text-gray-400 font-bold uppercase">CPF: {p.cpf}</p>
               </div>
               <ChevronRight className="text-gray-300" />
             </button>
@@ -133,88 +114,114 @@ export default function HistoricoClinicoPage() {
         </div>
       )}
 
-      {/* EXIBIÇÃO DA TIMELINE */}
+      {/* CONTEÚDO DO HISTÓRICO */}
       {pacienteSelecionado && (
-        <div className="space-y-6 animate-in fade-in">
-          <div className="bg-blue-600 p-6 rounded-4xl text-white shadow-xl flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase opacity-70 tracking-widest">Paciente Selecionado:</p>
-              <h2 className="text-2xl font-black uppercase tracking-tighter">{pacienteSelecionado.nome}</h2>
-            </div>
-            <User size={40} className="opacity-20" />
+        <div className="space-y-6">
+          <div className="bg-blue-600 p-8 rounded-[40px] text-white shadow-2xl flex justify-between items-center relative overflow-hidden">
+             <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase opacity-60 tracking-widest">Prontuário Ativo</p>
+                <h2 className="text-3xl font-black uppercase tracking-tighter">{pacienteSelecionado.nome}</h2>
+             </div>
+             <User size={80} className="absolute -right-4 -bottom-4 opacity-10" />
           </div>
 
           {buscandoHistorico ? (
             <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-blue-600" size={40} /></div>
           ) : historico.length === 0 ? (
-            <div className="bg-white p-20 rounded-4xl border-2 border-dashed border-gray-200 text-center text-gray-400">
-              <FileText className="mx-auto mb-4 opacity-20" size={48} />
-              <p className="font-bold">Nenhum atendimento registrado.</p>
+            <div className="bg-white p-20 rounded-[40px] border-2 border-dashed border-gray-200 text-center">
+              <AlertCircle className="mx-auto mb-4 text-gray-300" size={48} />
+              <p className="font-black text-gray-400 uppercase italic">Nenhum registro encontrado para este paciente.</p>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-10 mt-10">
               {historico.map((atendimento) => (
-                <div key={atendimento.id} className="relative pl-8 border-l-2 border-blue-200 ml-4">
-                  <div className="absolute -left-[9px] top-0 w-4 h-4 bg-blue-600 rounded-full ring-4 ring-white"></div>
+                <div key={atendimento.id} className="relative pl-10 border-l-4 border-blue-100 ml-4 pb-4">
+                  <div className="absolute -left-[14px] top-0 w-6 h-6 bg-white border-4 border-blue-600 rounded-full shadow-md"></div>
                   
-                  <div className="bg-white p-6 rounded-4xl border border-gray-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-50 pb-4">
-                      <div className="flex items-center gap-2 text-blue-600 font-black text-sm uppercase">
+                  <div className="bg-white p-8 rounded-[35px] border border-gray-100 shadow-xl hover:shadow-2xl transition-all">
+                    
+                    {/* CABEÇALHO DO ATENDIMENTO */}
+                    <div className="flex justify-between items-center mb-8 border-b border-gray-50 pb-6">
+                      <div className="bg-blue-50 px-4 py-2 rounded-2xl flex items-center gap-2 text-blue-700 font-black text-xs uppercase">
                         <Calendar size={16} /> {new Date(atendimento.data_atendimento).toLocaleDateString('pt-BR')}
                       </div>
-                      
-                      {/* BOTÕES DE AÇÃO */}
-                      {editandoId === atendimento.id ? (
+
+                      {/* O BOTÃO DE EDITAR AGORA ESTÁ EM DESTAQUE */}
+                      {idSendoEditado === atendimento.id ? (
                         <div className="flex gap-2">
-                          <button onClick={() => salvarAlteracoes(atendimento.id)} disabled={salvandoEdicao} className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-green-200 transition-all">
-                            {salvandoEdicao ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
+                          <button onClick={() => salvarAlteracoes(atendimento.id)} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-2xl text-[11px] font-black flex items-center gap-2 shadow-lg shadow-green-100">
+                            {salvandoEdicao ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} SALVAR ALTERAÇÕES
                           </button>
-                          <button onClick={() => setEditandoId(null)} className="flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase hover:bg-gray-200 transition-all">
-                            <X size={12} /> Cancelar
+                          <button onClick={() => setIdSendoEditado(null)} className="bg-gray-100 text-gray-500 px-6 py-2.5 rounded-2xl text-[11px] font-black hover:bg-gray-200">
+                            DESCARTAR
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => { setEditandoId(atendimento.id); setTempDados(atendimento); }} className="flex items-center gap-1 text-gray-400 hover:text-blue-600 transition-all text-[10px] font-black uppercase">
-                          <Edit3 size={12} /> Editar Registro
+                        <button 
+                          onClick={() => { setIdSendoEditado(atendimento.id); setTempDados({...atendimento}); }} 
+                          className="bg-gray-900 hover:bg-blue-600 text-white px-6 py-2.5 rounded-2xl text-[11px] font-black flex items-center gap-2 transition-all shadow-lg"
+                        >
+                          <Edit3 size={14} /> EDITAR ESTE REGISTRO
                         </button>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* COLUNA: DIAGNÓSTICO */}
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1"><Stethoscope size={14} /> Avaliação Médica</h4>
-                        {editandoId === atendimento.id ? (
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-gray-400">Queixa:</label>
-                            <textarea className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" rows={2} value={tempDados.queixa_principal} onChange={e => setTempDados({...tempDados, queixa_principal: e.target.value})} />
-                            <label className="text-[10px] font-bold text-gray-400">Diagnóstico:</label>
-                            <textarea className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500" rows={2} value={tempDados.diagnostico} onChange={e => setTempDados({...tempDados, diagnostico: e.target.value})} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      {/* LADO ESQUERDO: AVALIAÇÃO */}
+                      <div className="space-y-6">
+                        <h4 className="text-[11px] font-black text-blue-600 uppercase tracking-[3px] flex items-center gap-2">
+                           <Stethoscope size={16} /> Avaliação Médica
+                        </h4>
+                        
+                        {idSendoEditado === atendimento.id ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Queixa Principal:</label>
+                              <textarea className="w-full p-4 bg-gray-50 border-2 border-blue-50 rounded-2xl text-sm font-medium focus:border-blue-500 outline-none" rows={3} value={tempDados.queixa_principal} onChange={e => setTempDados({...tempDados, queixa_principal: e.target.value})} />
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Diagnóstico:</label>
+                              <textarea className="w-full p-4 bg-gray-50 border-2 border-blue-50 rounded-2xl text-sm font-bold italic focus:border-blue-500 outline-none" rows={3} value={tempDados.diagnostico} onChange={e => setTempDados({...tempDados, diagnostico: e.target.value})} />
+                            </div>
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            <p className="text-sm font-medium text-gray-700"><span className="font-black text-gray-900">Queixa:</span> {atendimento.queixa_principal}</p>
-                            <p className="text-sm font-medium text-gray-700 italic bg-blue-50 p-3 rounded-xl border-l-4 border-blue-400">{atendimento.diagnostico}</p>
+                          <div className="space-y-4">
+                            <div className="bg-gray-50 p-5 rounded-3xl">
+                               <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Relato do Paciente:</p>
+                               <p className="text-sm text-gray-700 font-medium leading-relaxed">{atendimento.queixa_principal}</p>
+                            </div>
+                            <div className="bg-blue-50/50 p-5 rounded-3xl border-l-8 border-blue-600">
+                               <p className="text-[10px] font-black text-blue-400 uppercase mb-2">Conclusão Diagnóstica:</p>
+                               <p className="text-sm text-gray-900 font-black italic">{atendimento.diagnostico}</p>
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* COLUNA: PRESCRIÇÃO */}
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1"><Pill size={14} className="text-red-500" /> Prescrição Médica</h4>
-                        {editandoId === atendimento.id ? (
-                          <textarea className="w-full p-4 bg-red-50 border border-red-100 rounded-xl text-sm font-bold text-red-700 outline-none focus:ring-2 focus:ring-red-500" rows={5} value={tempDados.prescricao} onChange={e => setTempDados({...tempDados, prescricao: e.target.value})} />
+                      {/* LADO DIREITO: PRESCRIÇÃO */}
+                      <div className="space-y-6">
+                        <h4 className="text-[11px] font-black text-red-600 uppercase tracking-[3px] flex items-center gap-2">
+                           <Pill size={16} /> Prescrição na Data
+                        </h4>
+                        
+                        {idSendoEditado === atendimento.id ? (
+                          <div>
+                            <label className="text-[9px] font-black text-gray-400 uppercase mb-1 block">Medicamentos e Orientações:</label>
+                            <textarea className="w-full p-5 bg-red-50/30 border-2 border-red-100 rounded-3xl text-sm font-black text-red-700 focus:border-red-500 outline-none" rows={8} value={tempDados.prescricao} onChange={e => setTempDados({...tempDados, prescricao: e.target.value})} />
+                          </div>
                         ) : (
-                          <div className="p-4 bg-red-50 rounded-2xl border-l-4 border-red-400 text-sm font-bold text-red-700 italic">
-                            {atendimento.prescricao}
+                          <div className="bg-red-50 p-8 rounded-[35px] border-l-8 border-red-500 min-h-[200px] shadow-inner">
+                            <p className="text-sm font-black text-red-700 whitespace-pre-wrap leading-relaxed">
+                              {atendimento.prescricao}
+                            </p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-gray-400 italic">Responsável: {atendimento.medico_nome}</span>
-                      {atendimento.status === 'concluido' && <span className="flex items-center gap-1 text-green-500 font-black text-[9px] uppercase tracking-widest"><Save size={10}/> Registro Validado</span>}
+                    <div className="mt-8 pt-6 border-t border-gray-50 flex justify-between items-center text-[10px] font-black text-gray-300 uppercase tracking-widest">
+                       <span>Médico: {atendimento.medico_nome}</span>
+                       <span className="text-blue-200">ID Atendimento: #{atendimento.id.slice(0,8)}</span>
                     </div>
                   </div>
                 </div>

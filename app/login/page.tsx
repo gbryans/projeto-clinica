@@ -2,112 +2,79 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ReCAPTCHA from "react-google-recaptcha";
-import { Lock, Mail, LogIn, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { Lock, Mail, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-
-  // Estados para capturar dados e validações
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [captchaOk, setCaptchaOk] = useState(false);
-  const [erro, setErro] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setErro(""); // Limpa erros anteriores
+    
+    // Limpa qualquer login anterior para evitar conflitos
+    localStorage.clear();
 
-    // 1. Validação do reCAPTCHA
-    if (!captchaOk) {
-      setErro("Por favor, prove que você não é um robô.");
-      return;
-    }
-
-    // 2. Simulação de Login (Mock)
-    // No futuro, isso será substituído por uma chamada ao Banco de Dados
-    if (email === "teste@clinica.com" && senha === "123456@") {
-      // Simulamos o salvamento do cargo do usuário no navegador
+    // Lógica de Simulação de Usuários
+    if (email === "admin@clinica.com" && senha === "123456@") {
       localStorage.setItem("userRole", "ADMIN");
+      localStorage.setItem("userName", "Dr. Augusto (Admin)");
+      localStorage.setItem("userSetor", "Direção Clínica");
+      localStorage.setItem("userUnidade", "Unidade Matriz");
       router.push("/dashboard");
-    } else {
-      setErro("E-mail ou senha incorretos. Use teste@clinica.com / 123456@");
+    } 
+    else if (email === "funcionario@clinica.com" && senha === "123456@") {
+      localStorage.setItem("userRole", "USER");
+      localStorage.setItem("userName", "Ana Silva");
+      localStorage.setItem("userSetor", "Recepção");
+      localStorage.setItem("userUnidade", "Unidade Matriz");
+      router.push("/dashboard");
+    } 
+    else {
+      alert("Credenciais inválidas!");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6 bg-gray-50">
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 space-y-8 border border-gray-100">
-
-        {/* Cabeçalho */}
-        <div className="text-center">
-          <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <LogIn className="text-green-600" size={30} />
-          </div>
-          <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Bem-vindo</h2>
-          <p className="text-gray-500 mt-2">Acesse o painel da sua clínica</p>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white p-8 rounded-4xl shadow-2xl w-full max-w-md">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-blue-600 italic tracking-tighter">CLÍNICA</h1>
+          <p className="text-gray-400 font-bold text-sm mt-2 uppercase tracking-widest">Acesso ao Sistema</p>
         </div>
 
-        {/* Alerta de Erro */}
-        {erro && (
-          <div className="flex items-center gap-2 bg-red-50 text-red-700 p-3 rounded-xl text-sm border border-red-100 animate-pulse">
-            <AlertCircle size={18} />
-            <span>{erro}</span>
-          </div>
-        )}
-
         <form onSubmit={handleLogin} className="space-y-4">
-          {/* Input E-mail */}
           <div className="relative">
-            <Mail className="absolute left-3 top-3.5 text-gray-400" size={18} />
-            <input
-              type="email"
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input 
+              type="email" 
               required
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="E-mail corporativo"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="E-mail"
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
             />
           </div>
 
-          {/* Input Senha */}
           <div className="relative">
-            <Lock className="absolute left-3 top-3.5 text-gray-400" size={18} />
-            <input
-              type="password"
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input 
+              type="password" 
               required
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="Sua senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              placeholder="Senha"
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
             />
           </div>
 
-          {/* Container do reCAPTCHA */}
-          <div className="flex justify-center py-2 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-            <ReCAPTCHA
-              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-              onChange={(value: string | null) => setCaptchaOk(!!value)}
-            />
-          </div>
-
-          {/* Botão Entrar */}
-          <button
+          <button 
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-green-100 active:scale-95 disabled:opacity-50"
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95"
           >
-            Entrar no Sistema
+            ENTRAR NO SISTEMA <ArrowRight size={20} />
           </button>
         </form>
-
-        {/* Footer do Card */}
-        <p className="text-center text-sm text-gray-500">
-          Novo por aqui?{" "}
-          <Link href="/cadastro" className="text-green-600 font-bold hover:underline">
-            Crie sua conta
-          </Link>
-        </p>
       </div>
     </div>
   );
